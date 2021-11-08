@@ -69,13 +69,19 @@ def train(path_imgs, config, epochs=5):
         _recons_loss = []
         utils.print_gre("Epoch {}/{}".format(epoch + 1, epochs))
         for step in ["Train", "Test"]:
-            with progressbar.ProgressBar(  # todo: refactor loop, pas bo
-                    max_value=len(dataset_train), widgets=widgets
+            if step == "Train":
+                net.train()
+                dataset = dataset_train
+            else:
+                net.eval()
+                dataset = dataset_val
+            with progressbar.ProgressBar(
+                    max_value=len(dataset), widgets=widgets
             ) as bar:
                 net.train()
-                for i in range(len(dataset_train)):  # boucle inf si on ne fait pas comme ça
+                for i in range(len(dataset)):  # boucle inf si on ne fait pas comme ça
                     bar.update(i)
-                    imgs = dataset_train[i].cuda()
+                    imgs = dataset[i].cuda()
                     if step == "Train":
                         optimizer.zero_grad()  # zero the gradient buffers
                     mask, att = net.forward_enc(imgs)  # return seg and attention map
@@ -101,6 +107,7 @@ def train(path_imgs, config, epochs=5):
                 step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
             ))
         scheduler.step()
+        utils.visualize(net, imgs, epoch+1, config)
         # save_model(net, np.array(_enc_loss).mean())
 
 

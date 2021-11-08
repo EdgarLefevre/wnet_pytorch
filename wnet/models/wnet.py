@@ -33,22 +33,10 @@ class Unet(nn.Module):
         bridge = self.bridge(x4)
         _, x = self.up1(bridge, c4)
         _, x = self.up2(x, c3)
-        att, x = self.up3(x, c2)
-        _, x = self.up4(x, c1)
+        _, x = self.up3(x, c2)
+        att, x = self.up4(x, c1)
         mask = self.outc(x)
         return mask, att
-
-
-# class Wnet(nn.Module):
-#     def __init__(self, filters, drop_r=0.3):
-#         super(Wnet, self).__init__()
-#         self.u_enc = Unet(filters, drop_r, False, out_conv_dim=2)
-#         self.u_dec = Unet(filters, drop_r, False)
-#
-#     def forward(self, x):
-#         mask = self.u_enc(x)
-#         reconstruction = self.u_dec(mask)
-#         return mask, reconstruction
 
 
 class Wnet_attention(nn.Module):

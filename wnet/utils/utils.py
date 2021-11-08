@@ -7,6 +7,7 @@ import re
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 
 def list_files_path(path):
@@ -41,6 +42,7 @@ def shuffle_lists(lista, listb, seed=42):
     random.seed(seed)
     random.shuffle(listb)
     return lista, listb
+
 
 def shuffle_list(lista, seed=42):
     """
@@ -172,3 +174,46 @@ def get_args():
     args = parser.parse_args()
     print_red(args)
     return args
+
+
+def visualize(net, image, k, opt):
+    if k % 2 == 0 or k == 1:
+        mask, att = net.forward_enc(image)
+        output = net.forward(image)
+        image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
+        argmax = torch.argmax(mask, 1)
+        pred, output = (
+            (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
+            (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
+        )
+        plot_images(image, pred, att.detach().cpu(), output, k, opt.size)
+
+
+def plot_images(imgs, pred, att, output, k, size):
+    fig = plt.figure(figsize=(15, 10))
+    columns = 4
+    rows = 5  # nb images
+    ax = []  # loop around here to plot more images
+    i = 0
+    for j, img in enumerate(imgs):
+        ax.append(fig.add_subplot(rows, columns, i + 1))
+        ax[-1].set_title("Input")
+        plt.imshow(img, cmap="gray")
+
+        ax.append(fig.add_subplot(rows, columns, i + 2))
+        ax[-1].set_title("Mask")
+        plt.imshow(pred[j].reshape((size, size)), cmap="gray")
+
+        ax.append(fig.add_subplot(rows, columns, i + 3))
+        ax[-1].set_title("Attention Map")
+        plt.imshow(att[j].reshape((size, size)))
+
+        ax.append(fig.add_subplot(rows, columns, i + 4))
+        ax[-1].set_title("Output")
+        plt.imshow(output[j].reshape((size, size)), cmap="gray")
+
+        i += 4
+        if i >= 15:
+            break
+    plt.savefig("data/results/epoch_" + str(k) + ".png")
+    plt.close()
