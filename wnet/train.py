@@ -52,7 +52,7 @@ def get_datasets(path_img, config):
 
 
 def train(path_imgs, config, epochs=5):
-    net = wnet.Wnet_attention(filters=config.filters, drop_r=config.drop_r).cuda()
+    net = nn.DataParallel(wnet.Wnet_attention(filters=config.filters, drop_r=config.drop_r).cuda())
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
     recons_loss = nn.MSELoss()
@@ -89,7 +89,7 @@ def train(path_imgs, config, epochs=5):
                     mask, att = net.forward_enc(imgs)  # return seg and attention map
                     loss_enc = n_cut_loss(imgs, mask)
                     if step == "Train":
-                        loss_enc.backward()
+                        loss_enc.mean().backward()
                         optimizer.step()
                     _enc_loss.append(loss_enc.item())
 
@@ -98,7 +98,7 @@ def train(path_imgs, config, epochs=5):
                     recons = net.forward(imgs)  # return seg and attention map
                     loss_recons = recons_loss(imgs, recons)
                     if step == "Train":
-                        loss_recons.backward()
+                        loss_recons.mean().backward()
                         optimizer.step()
                     _recons_loss.append(loss_recons.item())
                 if step == "Train":
