@@ -96,53 +96,23 @@ def sorted_alphanumeric(data):
     return sorted(data, key=alphanum_key)
 
 
-def visualize(imgs, pred):
+def learning_curves(train_enc, train_recons, val_enc, val_recons):
     fig = plt.figure(figsize=(15, 10))
-    columns = 2
-    rows = 5  # nb images
-    ax = []  # loop around here to plot more images
-    i = 0
-    for j, img in enumerate(imgs):
-        ax.append(fig.add_subplot(rows, columns, i + 1))
-        ax[-1].set_title("Input")
-        plt.imshow(img, cmap="gray")
-        ax.append(fig.add_subplot(rows, columns, i + 2))
-        ax[-1].set_title("Mask")
-        plt.imshow(pred[j], cmap="gray")
-        i += 2
-        if i >= 15:
-            break
-    # plt.show()
-    fig.savefig("plots/prediction.png")
-    plt.close(fig)
-
-
-def plot_att_map(img, map):
-    fig = plt.figure(figsize=(15, 10))
-    columns = 2
-    rows = 1  # nb images
     ax = []
-    ax.append(fig.add_subplot(rows, columns, 1))
-    ax[-1].set_title("Input")
-    plt.imshow(img, cmap="gray")
-    ax.append(fig.add_subplot(rows, columns, 2))
-    ax[-1].set_title("Attention map")
-    map = np.array(map).reshape(256, 256)
-    plt.imshow(map * 255)
-    plt.colorbar()
-    # plt.show()
-    fig.savefig("plots/att_map.png")
-    plt.close(fig)
-
-
-def learning_curves(train, val):
-    fig, ax = plt.subplots(1, figsize=(12, 8))
+    ax.append(fig.add_subplot(1, 2, 1))
+    ax.append(fig.add_subplot(1, 2, 2))
     fig.suptitle("Training Curves")
-    ax.plot(train, label="Entraînement")
-    ax.plot(val, label="Validation")
-    ax.set_ylabel("Loss", fontsize=14)
-    ax.set_xlabel("Epoch", fontsize=14)
-    fig.savefig("plots/plot.png")
+    ax[0].plot(train_enc, label="Train Enc")
+    ax[0].plot(val_enc, label="Validation Enc")
+    ax[1].plot(train_recons, label="Train Recons")
+    ax[1].plot(val_recons, label="Validation Recons")
+    ax[0].set_ylabel("Loss value", fontsize=14)
+    ax[0].set_xlabel("Epoch", fontsize=14)
+    ax[1].set_ylabel("Loss value", fontsize=14)
+    ax[1].set_xlabel("Epoch", fontsize=14)
+    ax[0].legend(loc="upper right")
+    ax[1].legend(loc="upper right")
+    fig.savefig("data/plot.png")
     plt.close(fig)
 
 

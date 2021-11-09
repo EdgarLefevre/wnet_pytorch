@@ -58,8 +58,10 @@ def train(path_imgs, config, epochs=5):
     recons_loss = nn.MSELoss()
     #  get dataset
     dataset_train, dataset_val = get_datasets(path_imgs, config)
-    # epoch_enc_loss = []
-    # epoch_recons_loss = []
+    epoch_enc_train = []
+    epoch_recons_train = []
+    epoch_enc_val = []
+    epoch_recons_val = []
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, epochs, verbose=True
@@ -68,7 +70,7 @@ def train(path_imgs, config, epochs=5):
         _enc_loss = []
         _recons_loss = []
         utils.print_gre("Epoch {}/{}".format(epoch + 1, epochs))
-        for step in ["Train", "Test"]:
+        for step in ["Train", "Validation"]:
             if step == "Train":
                 net.train()
                 dataset = dataset_train
@@ -99,16 +101,20 @@ def train(path_imgs, config, epochs=5):
                         loss_recons.backward()
                         optimizer.step()
                     _recons_loss.append(loss_recons.item())
-
-            # epoch_enc_loss.append(np.array(_enc_loss).mean())
-            # epoch_recons_loss.append(np.array(_recons_loss).mean())
+                if step == "Train":
+                    epoch_enc_train.append(np.array(_enc_loss).mean())
+                    epoch_recons_train.append(np.array(_recons_loss).mean())
+                else:
+                    epoch_enc_val.append(np.array(_enc_loss).mean())
+                    epoch_recons_val.append(np.array(_recons_loss).mean())
 
             utils.print_gre("{}: \nEncoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
                 step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
             ))
         scheduler.step()
         utils.visualize(net, imgs, epoch+1, config)
-        # save_model(net, np.array(_enc_loss).mean())
+    utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
+    # save_model(net, np.array(_enc_loss).mean())
 
 
 if __name__ == "__main__":
