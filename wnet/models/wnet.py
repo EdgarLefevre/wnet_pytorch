@@ -42,8 +42,8 @@ class Unet(nn.Module):
 class Wnet_attention(nn.Module):
     def __init__(self, filters, drop_r=0.3):
         super(Wnet_attention, self).__init__()
-        self.u_enc = Unet(filters, drop_r, True, out_conv_dim=2)
-        self.u_dec = Unet(filters, drop_r, True)
+        self.u_enc = nn.DataParallel(Unet(filters, drop_r, True, out_conv_dim=2))
+        self.u_dec = nn.DataParallel(Unet(filters, drop_r, True))
 
     def forward_enc(self, x):
         mask, att = self.u_enc(x)

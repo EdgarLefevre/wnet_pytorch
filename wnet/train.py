@@ -12,7 +12,7 @@ import torch.optim as optim
 from wnet.models import wnet
 from wnet.utils import utils, data, soft_n_cut_loss
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
 # widget list for the progress bar
 widgets = [
@@ -25,7 +25,7 @@ widgets = [
     ") ",
 ]
 
-BASE_PATH = "/home/edgar/Documents/Datasets/JB/new_images/"
+BASE_PATH = "/home/elefevre/Datasets/JB/new_images/"
 SAVE_PATH = "saved_models/net.pth"
 LOSS = np.inf
 
@@ -51,8 +51,8 @@ def get_datasets(path_img, config):
     return dataset_train, dataset_val
 
 
-def train(path_imgs, config, epochs=5):
-    net = nn.DataParallel(wnet.Wnet_attention(filters=config.filters, drop_r=config.drop_r).cuda())
+def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
+    net = wnet.Wnet_attention(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
     recons_loss = nn.MSELoss()
@@ -80,19 +80,16 @@ def train(path_imgs, config, epochs=5):
             with progressbar.ProgressBar(
                     max_value=len(dataset), widgets=widgets
             ) as bar:
-                net.train()
                 for i in range(len(dataset)):  # boucle inf si on ne fait pas comme ça
                     bar.update(i)
                     imgs = dataset[i].cuda()
                     if step == "Train":
                         optimizer.zero_grad()  # zero the gradient buffers
-                    mask, att = net.forward_enc(imgs)  # return seg and attention map
+                    mask, att = net.forward_enc(imgs)  # return reconstruction
                     loss_enc = n_cut_loss(imgs, mask)
                     if step == "Train":
                         loss_enc.mean().backward()
                         optimizer.step()
-                    _enc_loss.append(loss_enc.item())
-
                     if step == "Train":
                         optimizer.zero_grad()  # zero the gradient buffers
                     recons = net.forward(imgs)  # return seg and attention map
@@ -100,13 +97,14 @@ def train(path_imgs, config, epochs=5):
                     if step == "Train":
                         loss_recons.mean().backward()
                         optimizer.step()
+                    _enc_loss.append(loss_enc.item())
                     _recons_loss.append(loss_recons.item())
-                if step == "Train":
-                    epoch_enc_train.append(np.array(_enc_loss).mean())
-                    epoch_recons_train.append(np.array(_recons_loss).mean())
-                else:
-                    epoch_enc_val.append(np.array(_enc_loss).mean())
-                    epoch_recons_val.append(np.array(_recons_loss).mean())
+            if step == "Train":
+                epoch_enc_train.append(np.array(_enc_loss).mean())
+                epoch_recons_train.append(np.array(_recons_loss).mean())
+            else:
+                epoch_enc_val.append(np.array(_enc_loss).mean())
+                epoch_recons_val.append(np.array(_recons_loss).mean())
 
             utils.print_gre("{}: \nEncoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
                 step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
