@@ -10,9 +10,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 from wnet.models import wnet
-from wnet.utils import utils, data, soft_n_cut_loss
+from wnet.utils import utils, data, soft_n_cut_loss, ssim
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 # widget list for the progress bar
 widgets = [
@@ -55,7 +55,8 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = wnet.Wnet_attention(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
-    recons_loss = nn.MSELoss()
+    # recons_loss = nn.MSELoss()
+    recons_loss = ssim.ssim
     #  get dataset
     dataset_train, dataset_val = get_datasets(path_imgs, config)
     epoch_enc_train = []
@@ -90,8 +91,8 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                     if step == "Train":
                         loss_enc.mean().backward()
                         optimizer.step()
-                    if step == "Train":
-                        optimizer.zero_grad()  # zero the gradient buffers
+                    # if step == "Train":
+                        # optimizer.zero_grad()  # zero the gradient buffers
                     recons = net.forward(imgs)  # return seg and attention map
                     loss_recons = recons_loss(imgs, recons)
                     if step == "Train":

@@ -177,6 +177,7 @@ def plot_images(imgs, pred, att, output, k, size):
         ax.append(fig.add_subplot(rows, columns, i + 3))
         ax[-1].set_title("Attention Map")
         plt.imshow(att[j].reshape((size, size)))
+        plt.colorbar()
 
         ax.append(fig.add_subplot(rows, columns, i + 4))
         ax[-1].set_title("Output")
