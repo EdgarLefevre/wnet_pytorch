@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from wnet.models import wnet
-from wnet.utils import utils, data, soft_n_cut_loss, ssim
+from wnet.utils import utils, data, soft_n_cut_loss
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
@@ -25,7 +25,7 @@ widgets = [
     ") ",
 ]
 
-BASE_PATH = "/home/elefevre/Datasets/JB/new_images/"
+BASE_PATH = "/home/edgar/Documents/Datasets/JB/new_images/"
 SAVE_PATH = "saved_models/net.pth"
 LOSS = np.inf
 
@@ -49,6 +49,38 @@ def get_datasets(path_img, config):
     )
     dataset_val = data.Unsupervised_dataset(config.batch_size, config.size, img_val)
     return dataset_train, dataset_val
+
+def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
+    _enc_loss, _recons_loss = [], []
+    if step == "Train":
+        net.train()
+    else:
+        net.eval()
+    with progressbar.ProgressBar(
+            max_value=len(dataset), widgets=widgets
+    ) as bar:
+        for i in range(len(dataset)):  # boucle inf si on ne fait pas comme ça
+            bar.update(i)
+            imgs = dataset[i].cuda()
+            if step == "Train":
+                optim.zero_grad()  # zero the gradient buffers
+            recons = net.forward(imgs)  # return seg and attention map
+            loss_recons = recons_loss(recons, imgs)
+            if step == "Train":
+                loss_recons.mean().backward()
+                optim.step()
+            if step == "Train":
+                optim.zero_grad()  # zero the gradient buffers
+            mask = net.forward_enc(imgs)  # return reconstruction
+            loss_enc = n_cut_loss(imgs, mask)
+            if step == "Train":
+                loss_enc.mean().backward()
+                optim.step()
+            _enc_loss.append(loss_enc.item())
+            _recons_loss.append(loss_recons.item())
+            if step == "Validation":
+                utils.visualize(net, imgs, epoch + 1, config, path="data/results/")
+    return _enc_loss, _recons_loss
 
 
 def train_att(path_imgs, config, epochs=5):  # todo: refactor this ugly code
@@ -137,33 +169,10 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
         utils.print_gre("Epoch {}/{}".format(epoch + 1, epochs))
         for step in ["Train", "Validation"]:
             if step == "Train":
-                net.train()
                 dataset = dataset_train
             else:
-                net.eval()
                 dataset = dataset_val
-            with progressbar.ProgressBar(
-                    max_value=len(dataset), widgets=widgets
-            ) as bar:
-                for i in range(len(dataset)):  # boucle inf si on ne fait pas comme ça
-                    bar.update(i)
-                    imgs = dataset[i].cuda()
-                    if step == "Train":
-                        optimizer.zero_grad()  # zero the gradient buffers
-                    recons = net.forward(imgs)  # return seg and attention map
-                    loss_recons = recons_loss(imgs, recons)
-                    if step == "Train":
-                        loss_recons.mean().backward()
-                        optimizer.step()
-                    if step == "Train":
-                        optimizer.zero_grad()  # zero the gradient buffers
-                    mask = net.forward_enc(imgs)  # return reconstruction
-                    loss_enc = n_cut_loss(imgs, mask)
-                    if step == "Train":
-                        loss_enc.mean().backward()
-                        optimizer.step()
-                    _enc_loss.append(loss_enc.item())
-                    _recons_loss.append(loss_recons.item())
+            _enc_loss, _recons_loss = _step(net, step, dataset, optimizer, n_cut_loss, recons_loss, epoch, config)
             if step == "Train":
                 epoch_enc_train.append(np.array(_enc_loss).mean())
                 epoch_recons_train.append(np.array(_recons_loss).mean())
@@ -175,7 +184,7 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
             ))
         scheduler.step()
-        utils.visualize(net, imgs, epoch+1, config, path="data/results/")
+        # utils.visualize(net, imgs, epoch+1, config, path="data/results/")
     utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
     # save_model(net, np.array(_enc_loss).mean())
 
