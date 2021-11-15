@@ -195,7 +195,7 @@ def visualize(net, image, k, opt, path="data/results/"):
         mask = net.forward_enc(image)
         output = net.forward(image)
         image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
-        argmax = torch.argmax(mask, 1)
+        argmax = mask > 0.5
         pred, output = (
             (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
             (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),

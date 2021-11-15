@@ -42,7 +42,7 @@ class Unet_attention(nn.Module):
 class Wnet_attention(nn.Module):
     def __init__(self, filters, drop_r=0.3):
         super(Wnet_attention, self).__init__()
-        self.u_enc = nn.DataParallel(Unet_attention(filters, drop_r, out_conv_dim=2))
+        self.u_enc = nn.DataParallel(Unet_attention(filters, drop_r))
         self.u_dec = nn.DataParallel(Unet_attention(filters, drop_r))
 
     def forward_enc(self, x):
@@ -56,12 +56,10 @@ class Wnet_attention(nn.Module):
 
 
 class Unet(nn.Module):
-    def __init__(self, filters, drop_r=0.5,out_conv_dim=1):
+    def __init__(self, filters, drop_r=0.5):
         super(Unet, self).__init__()
-        if out_conv_dim == 2:
-            self.down1 = um.Down_Block(1, filters)
-        else:
-            self.down1 = um.Down_Block(2, filters)
+
+        self.down1 = um.Down_Block(1, filters)
 
         self.down2 = um.Down_Block(filters, filters * 2, drop_r)
         self.down3 = um.Down_Block(filters * 2, filters * 4, drop_r)
@@ -74,7 +72,7 @@ class Unet(nn.Module):
         self.up3 = um.Up_Block(filters * 4, filters * 2, drop_r, False)
         self.up4 = um.Up_Block(filters * 2, filters, drop_r, False)
 
-        self.outc = um.OutConv(filters, out_conv_dim)
+        self.outc = um.OutConv(filters, 1)
 
     def forward(self, x):
         c1, x1 = self.down1(x)
@@ -93,7 +91,7 @@ class Unet(nn.Module):
 class Wnet(nn.Module):
     def __init__(self, filters, drop_r=0.3):
         super(Wnet, self).__init__()
-        self.u_enc = nn.DataParallel(Unet(filters, drop_r, out_conv_dim=1))
+        self.u_enc = nn.DataParallel(Unet(filters, drop_r))
         self.u_dec = nn.DataParallel(Unet(filters, drop_r))
 
     def forward_enc(self, x):

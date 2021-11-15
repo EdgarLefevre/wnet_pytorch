@@ -25,7 +25,7 @@ widgets = [
     ") ",
 ]
 
-BASE_PATH = "/home/edgar/Documents/Datasets/JB/new_images/"
+BASE_PATH = "/home/elefevre/Datasets/JB/new_images/"
 SAVE_PATH = "saved_models/net.pth"
 LOSS = np.inf
 
@@ -63,17 +63,15 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
             bar.update(i)
             imgs = dataset[i].cuda()
             if step == "Train":
-                optim.zero_grad()  # zero the gradient buffers
-            recons = net.forward(imgs)  # return seg and attention map
+                optim.zero_grad()
+            recons = net.forward(imgs)
             loss_recons = recons_loss(recons, imgs)
             if step == "Train":
                 loss_recons.mean().backward()
                 optim.step()
             if step == "Train":
-                optim.zero_grad()  # zero the gradient buffers
-            mask = net.forward_enc(imgs)  # return reconstruction
-            mask = (mask > 0.5).astype(np.uint8)
-            print(mask.shape, "mask")
+                optim.zero_grad()
+            mask = net.forward_enc(imgs)
             loss_enc = n_cut_loss(imgs, mask)
             if step == "Train":
                 loss_enc.mean().backward()
