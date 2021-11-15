@@ -72,6 +72,8 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
             if step == "Train":
                 optim.zero_grad()  # zero the gradient buffers
             mask = net.forward_enc(imgs)  # return reconstruction
+            mask = (mask > 0.5).astype(np.uint8)
+            print(mask.shape, "mask")
             loss_enc = n_cut_loss(imgs, mask)
             if step == "Train":
                 loss_enc.mean().backward()

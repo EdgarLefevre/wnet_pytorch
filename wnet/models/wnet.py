@@ -93,7 +93,7 @@ class Unet(nn.Module):
 class Wnet(nn.Module):
     def __init__(self, filters, drop_r=0.3):
         super(Wnet, self).__init__()
-        self.u_enc = nn.DataParallel(Unet(filters, drop_r, out_conv_dim=2))
+        self.u_enc = nn.DataParallel(Unet(filters, drop_r, out_conv_dim=1))
         self.u_dec = nn.DataParallel(Unet(filters, drop_r))
 
     def forward_enc(self, x):
