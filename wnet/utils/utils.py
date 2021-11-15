@@ -96,7 +96,7 @@ def sorted_alphanumeric(data):
     return sorted(data, key=alphanum_key)
 
 
-def learning_curves(train_enc, train_recons, val_enc, val_recons):
+def learning_curves(train_enc, train_recons, val_enc, val_recons, path="data/plot.png"):
     fig = plt.figure(figsize=(15, 10))
     ax = []
     ax.append(fig.add_subplot(1, 2, 1))
@@ -112,7 +112,7 @@ def learning_curves(train_enc, train_recons, val_enc, val_recons):
     ax[1].set_xlabel("Epoch", fontsize=14)
     ax[0].legend(loc="upper right")
     ax[1].legend(loc="upper right")
-    fig.savefig("data/plot.png")
+    fig.savefig(path)
     plt.close(fig)
 
 
@@ -146,7 +146,7 @@ def get_args():
     return args
 
 
-def visualize(net, image, k, opt):
+def visualize_att(net, image, k, opt, path="data/results/"):
     if k % 2 == 0 or k == 1:
         mask, att = net.forward_enc(image)
         output = net.forward(image)
@@ -156,10 +156,10 @@ def visualize(net, image, k, opt):
             (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
             (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
         )
-        plot_images(image, pred, att.detach().cpu(), output, k, opt.size)
+        plot_images_att(image, pred, att.detach().cpu(), output, k, opt.size, path)
 
 
-def plot_images(imgs, pred, att, output, k, size):
+def plot_images_att(imgs, pred, att, output, k, size, path):
     fig = plt.figure(figsize=(15, 10))
     columns = 4
     rows = 5  # nb images
@@ -186,5 +186,44 @@ def plot_images(imgs, pred, att, output, k, size):
         i += 4
         if i >= 15:
             break
-    plt.savefig("data/results/epoch_" + str(k) + ".png")
+    plt.savefig(path+"epoch_" + str(k) + ".png")
+    plt.close()
+
+
+def visualize(net, image, k, opt, path="data/results/"):
+    if k % 2 == 0 or k == 1:
+        mask = net.forward_enc(image)
+        output = net.forward(image)
+        image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
+        argmax = torch.argmax(mask, 1)
+        pred, output = (
+            (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
+            (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
+        )
+        plot_images(image, pred, output, k, opt.size, path)
+
+
+def plot_images(imgs, pred,output, k, size, path):
+    fig = plt.figure(figsize=(15, 10))
+    columns = 3
+    rows = 5  # nb images
+    ax = []  # loop around here to plot more images
+    i = 0
+    for j, img in enumerate(imgs):
+        ax.append(fig.add_subplot(rows, columns, i + 1))
+        ax[-1].set_title("Input")
+        plt.imshow(img, cmap="gray")
+
+        ax.append(fig.add_subplot(rows, columns, i + 2))
+        ax[-1].set_title("Mask")
+        plt.imshow(pred[j].reshape((size, size)), cmap="gray")
+
+        ax.append(fig.add_subplot(rows, columns, i + 3))
+        ax[-1].set_title("Output")
+        plt.imshow(output[j].reshape((size, size)), cmap="gray")
+
+        i += 3
+        if i >= 15:
+            break
+    plt.savefig(path+"epoch_" + str(k) + ".png")
     plt.close()

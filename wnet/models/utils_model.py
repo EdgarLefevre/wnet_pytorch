@@ -69,7 +69,7 @@ class Up_Block(nn.Module):
             return map, self.conv(x)
         else:
             x = torch.cat([conc, x1], dim=1)
-            return None, self.conv(x)
+            return self.conv(x)
 
 
 class OutConv(nn.Module):

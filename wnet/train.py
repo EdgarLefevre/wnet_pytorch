@@ -12,7 +12,7 @@ import torch.optim as optim
 from wnet.models import wnet
 from wnet.utils import utils, data, soft_n_cut_loss, ssim
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
 # widget list for the progress bar
 widgets = [
@@ -51,7 +51,7 @@ def get_datasets(path_img, config):
     return dataset_train, dataset_val
 
 
-def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
+def train_att(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = wnet.Wnet_attention(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
@@ -91,8 +91,8 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                     if step == "Train":
                         loss_enc.mean().backward()
                         optimizer.step()
-                    # if step == "Train":
-                        # optimizer.zero_grad()  # zero the gradient buffers
+                    if step == "Train":
+                        optimizer.zero_grad()  # zero the gradient buffers
                     recons = net.forward(imgs)  # return seg and attention map
                     loss_recons = recons_loss(imgs, recons)
                     if step == "Train":
@@ -112,6 +112,70 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
             ))
         scheduler.step()
         utils.visualize(net, imgs, epoch+1, config)
+    utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
+    # save_model(net, np.array(_enc_loss).mean())
+
+
+def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
+    net = wnet.Wnet(filters=config.filters, drop_r=config.drop_r).cuda()
+    optimizer = optim.Adam(net.parameters(), lr=config.lr)
+    n_cut_loss = soft_n_cut_loss.NCutLoss2D()
+    recons_loss = nn.MSELoss()
+    #  get dataset
+    dataset_train, dataset_val = get_datasets(path_imgs, config)
+    epoch_enc_train = []
+    epoch_recons_train = []
+    epoch_enc_val = []
+    epoch_recons_val = []
+
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, epochs, verbose=True
+    )
+    for epoch in range(epochs):
+        _enc_loss = []
+        _recons_loss = []
+        utils.print_gre("Epoch {}/{}".format(epoch + 1, epochs))
+        for step in ["Train", "Validation"]:
+            if step == "Train":
+                net.train()
+                dataset = dataset_train
+            else:
+                net.eval()
+                dataset = dataset_val
+            with progressbar.ProgressBar(
+                    max_value=len(dataset), widgets=widgets
+            ) as bar:
+                for i in range(len(dataset)):  # boucle inf si on ne fait pas comme ça
+                    bar.update(i)
+                    imgs = dataset[i].cuda()
+                    if step == "Train":
+                        optimizer.zero_grad()  # zero the gradient buffers
+                    recons = net.forward(imgs)  # return seg and attention map
+                    loss_recons = recons_loss(imgs, recons)
+                    if step == "Train":
+                        loss_recons.mean().backward()
+                        optimizer.step()
+                    if step == "Train":
+                        optimizer.zero_grad()  # zero the gradient buffers
+                    mask = net.forward_enc(imgs)  # return reconstruction
+                    loss_enc = n_cut_loss(imgs, mask)
+                    if step == "Train":
+                        loss_enc.mean().backward()
+                        optimizer.step()
+                    _enc_loss.append(loss_enc.item())
+                    _recons_loss.append(loss_recons.item())
+            if step == "Train":
+                epoch_enc_train.append(np.array(_enc_loss).mean())
+                epoch_recons_train.append(np.array(_recons_loss).mean())
+            else:
+                epoch_enc_val.append(np.array(_enc_loss).mean())
+                epoch_recons_val.append(np.array(_recons_loss).mean())
+
+            utils.print_gre("{}: \nEncoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
+                step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
+            ))
+        scheduler.step()
+        utils.visualize(net, imgs, epoch+1, config, path="data/results/")
     utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
     # save_model(net, np.array(_enc_loss).mean())
 
