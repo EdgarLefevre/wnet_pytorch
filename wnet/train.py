@@ -50,6 +50,7 @@ def get_datasets(path_img, config):
     dataset_val = data.Unsupervised_dataset(config.batch_size, config.size, img_val)
     return dataset_train, dataset_val
 
+
 def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
     _enc_loss, _recons_loss = [], []
     if step == "Train":
@@ -65,16 +66,12 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
             if step == "Train":
                 optim.zero_grad()
             recons = net.forward(imgs)
-            loss_recons = recons_loss(recons, imgs)
-            if step == "Train":
-                loss_recons.mean().backward()
-                optim.step()
-            if step == "Train":
-                optim.zero_grad()
             mask = net.forward_enc(imgs)
+            loss_recons = recons_loss(recons, imgs)
             loss_enc = n_cut_loss(imgs, mask)
             if step == "Train":
-                loss_enc.mean().backward()
+                loss = loss_enc + loss_recons  # same as retain graph
+                loss.backward()
                 optim.step()
             _enc_loss.append(loss_enc.item())
             _recons_loss.append(loss_recons.item())
