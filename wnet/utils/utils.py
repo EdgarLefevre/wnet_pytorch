@@ -192,8 +192,8 @@ def plot_images_att(imgs, pred, att, output, k, size, path):
 
 def visualize(net, image, k, opt, path="data/results/"):
     if k % 2 == 0 or k == 1:
-        mask = net.forward_enc(image)
-        output = net.forward(image)
+        # mask = net.forward_enc(image)
+        output, mask = net.forward(image)
         image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
         argmax = mask > 0.5
         pred, output = (
