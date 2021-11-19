@@ -8,18 +8,18 @@ class Unet(nn.Module):
     def __init__(self, filters, drop_r=0.5):
         super(Unet, self).__init__()
 
-        self.down1 = um.Res_Block_down(1, filters)
+        self.down1 = um.Res_conv_Block_down(1, filters)
 
-        self.down2 = um.Res_Block_down(filters, filters * 2)
-        self.down3 = um.Res_Block_down(filters * 2, filters * 4)
-        self.down4 = um.Res_Block_down(filters * 4, filters * 8)
+        self.down2 = um.Res_conv_Block_down(filters, filters * 2)
+        self.down3 = um.Res_conv_Block_down(filters * 2, filters * 4)
+        self.down4 = um.Res_conv_Block_down(filters * 4, filters * 8)
 
         self.bridge = um.Bridge(filters * 8, filters * 16, drop_r)
 
-        self.up1 = um.Res_Block_up(filters * 16, filters * 8)
-        self.up2 = um.Res_Block_up(filters * 8, filters * 4)
-        self.up3 = um.Res_Block_up(filters * 4, filters * 2)
-        self.up4 = um.Res_Block_up(filters * 2, filters)
+        self.up1 = um.Res_conv_Block_up(filters * 16, filters * 8)
+        self.up2 = um.Res_conv_Block_up(filters * 8, filters * 4)
+        self.up3 = um.Res_conv_Block_up(filters * 4, filters * 2)
+        self.up4 = um.Res_conv_Block_up(filters * 2, filters)
 
         self.outc = um.OutConv(filters, 1)
 

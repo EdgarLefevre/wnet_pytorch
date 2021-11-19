@@ -177,3 +177,64 @@ class Res_Block_up(nn.Module):
         x3 = torch.add(x1, x2)
         x = self.conv_relu2(x3)
         return x
+
+class Res_conv_Block_down(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(Res_conv_Block_down, self).__init__()
+        self.conv_relu1 = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        )
+        self.conv_relu2 = nn.Sequential(
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+        self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
+        self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        x1 = self.conv_relu1(x)
+        x2 = self.conv_block(x1)
+        x_short = self.shortcut(x)
+        x3 = torch.add(x_short, x2)
+        x = self.conv_relu2(x3)
+        return x, self.down(x)
+
+class Res_conv_Block_up(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(Res_conv_Block_up, self).__init__()
+        self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+
+        self.conv_relu1 = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        )
+        self.conv_relu2 = nn.Sequential(
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+        self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x, conc):
+        xup = self.up(x)
+        xconc = torch.cat([xup, conc], dim=1)
+        x1 = self.conv_relu1(xconc)
+        x2 = self.conv_block(x1)
+        x_short = self.shortcut(xconc)
+        x3 = torch.add(x_short, x2)
+        x = self.conv_relu2(x3)
+        return x
