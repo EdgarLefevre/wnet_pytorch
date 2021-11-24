@@ -280,7 +280,7 @@ class Res_preactivation_up(nn.Module):
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
 
         self.conv_block = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
+            nn.BatchNorm2d(in_channels),
             nn.ReLU(),
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
@@ -296,8 +296,7 @@ class Res_preactivation_up(nn.Module):
     def forward(self, x, conc):
         xup = self.up(x)
         xconc = torch.cat([xup, conc], dim=1)
-        x1 = self.conv_relu1(xconc)
-        x2 = self.conv_block(x1)
+        x2 = self.conv_block(xconc)
         x_short = self.shortcut(xconc)
         x3 = torch.add(x_short, x2)
         x = self.conv_relu2(x3)

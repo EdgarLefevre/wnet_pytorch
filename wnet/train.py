@@ -137,12 +137,17 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 #     utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
 #     # save_model(net, np.array(_enc_loss).mean())
 
+def reconstruction_loss(imgs, recons):
+    mse = nn.MSELoss()
+    bce = nn.BCELoss()
+    return mse(recons, imgs) + bce(recons, imgs)
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = residual_wnet.Wnet_preact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
-    recons_loss = nn.MSELoss()
+    # recons_loss = nn.MSELoss()
+    recons_loss = reconstruction_loss
     #  get dataset
     dataset_train, dataset_val = get_datasets(path_imgs, config)
     epoch_enc_train = []

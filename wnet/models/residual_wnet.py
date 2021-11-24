@@ -61,10 +61,10 @@ class Unet_preact(nn.Module):
 
         self.bridge = um.Bridge(filters * 8, filters * 16, drop_r)
 
-        self.up1 = um.Res_preactivation_down(filters * 16, filters * 8)
-        self.up2 = um.Res_preactivation_down(filters * 8, filters * 4)
-        self.up3 = um.Res_preactivation_down(filters * 4, filters * 2)
-        self.up4 = um.Res_preactivation_down(filters * 2, filters)
+        self.up1 = um.Res_preactivation_up(filters * 16, filters * 8)
+        self.up2 = um.Res_preactivation_up(filters * 8, filters * 4)
+        self.up3 = um.Res_preactivation_up(filters * 4, filters * 2)
+        self.up4 = um.Res_preactivation_up(filters * 2, filters)
 
         self.outc = um.OutConv(filters, 1)
 
@@ -85,8 +85,8 @@ class Unet_preact(nn.Module):
 class Wnet_preact(nn.Module):
     def __init__(self, filters, drop_r=0.3):
         super(Wnet_preact, self).__init__()
-        self.u_enc = nn.DataParallel(Unet(filters, drop_r))
-        self.u_dec = nn.DataParallel(Unet(filters, drop_r))
+        self.u_enc = nn.DataParallel(Unet_preact(filters, drop_r))
+        self.u_dec = nn.DataParallel(Unet_preact(filters, drop_r))
 
     def forward(self, x):
         mask = self.u_enc(x)
