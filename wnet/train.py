@@ -74,8 +74,8 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
                 optim.step()
             _enc_loss.append(loss_enc.item())
             _recons_loss.append(loss_recons.item())
-            if step == "Validation":
-                utils.visualize(net, imgs, epoch + 1, config, path="data/results/")
+            if step == "Validation" and (epoch+1) == config.epochs:
+                utils.visualize(net, imgs, epoch + 1, i, config, path="data/results/")
     return _enc_loss, _recons_loss
 
 
@@ -139,8 +139,8 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 
 def reconstruction_loss(imgs, recons):
     mse = nn.MSELoss()
-    bce = nn.BCELoss()
-    return mse(recons, imgs) + bce(recons, imgs)
+    # bce = nn.BCELoss()
+    return mse(recons, imgs) #+ bce(recons, imgs)
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = residual_wnet.Wnet_preact(filters=config.filters, drop_r=config.drop_r).cuda()

@@ -190,7 +190,7 @@ def plot_images_att(imgs, pred, att, output, k, size, path):
     plt.close()
 
 
-def visualize(net, image, k, opt, path="data/results/"):
+def visualize(net, image, k, i, opt, path="data/results/"):
     if k % 2 == 0 or k == 1:
         # mask = net.forward_enc(image)
         output, mask = net.forward(image)
@@ -200,10 +200,11 @@ def visualize(net, image, k, opt, path="data/results/"):
             (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
             (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
         )
-        plot_images(image, pred, output, k, opt.size, path)
+        print(output)
+        plot_images(image, pred, output, k, i, opt.size, path)
 
 
-def plot_images(imgs, pred,output, k, size, path):
+def plot_images(imgs, pred,output, k, nb, size, path):
     fig = plt.figure(figsize=(15, 10))
     columns = 3
     rows = 5  # nb images
@@ -225,5 +226,5 @@ def plot_images(imgs, pred,output, k, size, path):
         i += 3
         if i >= 15:
             break
-    plt.savefig(path+"epoch_" + str(k) + ".png")
+    plt.savefig(path+"epoch_" + str(k) + "_{}_.png".format(nb))
     plt.close()
