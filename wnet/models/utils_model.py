@@ -438,9 +438,8 @@ class Res_Sep_preactivation_down(nn.Module):
         x2 = self.dp(x2)
         x_short = self.shortcut(x)
         x = torch.add(x_short, x2)
-        # x = self.conv_relu2(x)
+        x = self.conv_relu2(x)
         return x, self.down(x)
-
 
 
 class Res_Sep_preactivation_up(nn.Module):
@@ -470,5 +469,5 @@ class Res_Sep_preactivation_up(nn.Module):
         x2 = self.dp(x2)
         x_short = self.shortcut(xconc)
         x = torch.add(x_short, x2)
-        # x = self.conv_relu2(x)
+        x = self.conv_relu2(x)
         return x
