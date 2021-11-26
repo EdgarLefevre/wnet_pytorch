@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from wnet.models import wnet, residual_wnet
-from wnet.utils import utils, data, soft_n_cut_loss
+from wnet.utils import utils, data, soft_n_cut_loss, ssim
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
@@ -143,7 +143,9 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 def reconstruction_loss(imgs, recons):
     mse = nn.MSELoss()
     # bce = nn.BCELoss()
-    return mse(recons, imgs) #+ bce(recons, imgs)
+    ssim_loss = ssim.ssim
+    return ssim_loss(imgs, recons) + 0.5 * mse(recons, imgs) #+ bce(recons, imgs)
+
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     # net = wnet.WnetSep(filters=config.filters, drop_r=config.drop_r).cuda()
