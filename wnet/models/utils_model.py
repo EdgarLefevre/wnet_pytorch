@@ -410,7 +410,7 @@ class Res_preactivation_up(nn.Module):
 
 
 class Res_Sep_preactivation_down(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, drop=0.3):
         super(Res_Sep_preactivation_down, self).__init__()
         self.conv_relu1 = nn.Sequential(
             SeparableConv2d(in_channels, out_channels, kernel_size=3),
@@ -428,21 +428,23 @@ class Res_Sep_preactivation_down(nn.Module):
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
             nn.ReLU()
         )
+        self.dp = nn.Dropout(p=drop)
         self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
         self.shortcut = SeparableConv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
         x1 = self.conv_relu1(x)
         x2 = self.conv_block(x1)
+        x2 = self.dp(x2)
         x_short = self.shortcut(x)
-        x3 = torch.add(x_short, x2)
-        x = self.conv_relu2(x3)
+        x = torch.add(x_short, x2)
+        # x = self.conv_relu2(x)
         return x, self.down(x)
 
 
 
 class Res_Sep_preactivation_up(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, drop=0.3):
         super(Res_Sep_preactivation_up, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
 
@@ -458,13 +460,15 @@ class Res_Sep_preactivation_up(nn.Module):
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
             nn.ReLU()
         )
+        self.dp = nn.Dropout(p=drop)
         self.shortcut = SeparableConv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x, conc):
         xup = self.up(x)
         xconc = torch.cat([xup, conc], dim=1)
         x2 = self.conv_block(xconc)
+        x2 = self.dp(x2)
         x_short = self.shortcut(xconc)
-        x3 = torch.add(x_short, x2)
-        x = self.conv_relu2(x3)
+        x = torch.add(x_short, x2)
+        # x = self.conv_relu2(x)
         return x
