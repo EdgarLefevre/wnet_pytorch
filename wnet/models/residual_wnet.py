@@ -100,15 +100,16 @@ class Unet_Seppreact(nn.Module):
 
         self.down1 = um.Res_preactivation_down(in_channels, filters)
 
-        self.down2 = um.Res_preactivation_down(filters, filters * 2)
-        self.down3 = um.Res_preactivation_down(filters * 2, filters * 4)
-        self.down4 = um.Res_preactivation_down(filters * 4, filters * 8)
+        self.down2 = um.Res_Sep_preactivation_down(filters, filters * 2)
+        self.down3 = um.Res_Sep_preactivation_down(filters * 2, filters * 4)
+        self.down4 = um.Res_Sep_preactivation_down(filters * 4, filters * 8)
 
         self.bridge = um.Bridge(filters * 8, filters * 16, drop_r)
 
-        self.up1 = um.Res_preactivation_up(filters * 16, filters * 8)
-        self.up2 = um.Res_preactivation_up(filters * 8, filters * 4)
-        self.up3 = um.Res_preactivation_up(filters * 4, filters * 2)
+        self.up1 = um.Res_Sep_preactivation_up(filters * 16, filters * 8)
+        self.up2 = um.Res_Sep_preactivation_up(filters * 8, filters * 4)
+        self.up3 = um.Res_Sep_preactivation_up(filters * 4, filters * 2)
+        
         self.up4 = um.Res_preactivation_up(filters * 2, filters)
 
         self.outc = um.NewOutConv(filters, 1, sig)
