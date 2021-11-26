@@ -25,8 +25,11 @@ widgets = [
     ") ",
 ]
 
-BASE_PATH = "/home/edgar/Documents/Datasets/JB/new_images/"
-# BASE_PATH = "/home/elefevre/Datasets/JB/new_images/"
+if os.uname()[1] == "iss":  # remove this when code will be distributed
+    BASE_PATH = "/home/edgar/Documents/Datasets/JB/new_images/"
+else:
+    BASE_PATH = "/home/elefevre/Datasets/JB/new_images/"
+
 SAVE_PATH = "saved_models/net.pth"
 LOSS = np.inf
 

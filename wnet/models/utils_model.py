@@ -430,7 +430,7 @@ class Res_Sep_preactivation_down(nn.Module):
         )
         self.dp = nn.Dropout(p=drop)
         self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
-        self.shortcut = SeparableConv2d(in_channels, out_channels, kernel_size=1)
+        self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
         x1 = self.conv_relu1(x)
@@ -461,7 +461,7 @@ class Res_Sep_preactivation_up(nn.Module):
             nn.ReLU()
         )
         self.dp = nn.Dropout(p=drop)
-        self.shortcut = SeparableConv2d(in_channels, out_channels, kernel_size=1)
+        self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x, conc):
         xup = self.up(x)

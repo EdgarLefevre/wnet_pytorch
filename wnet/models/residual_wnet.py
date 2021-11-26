@@ -109,7 +109,7 @@ class Unet_Seppreact(nn.Module):
         self.up1 = um.Res_Sep_preactivation_up(filters * 16, filters * 8)
         self.up2 = um.Res_Sep_preactivation_up(filters * 8, filters * 4)
         self.up3 = um.Res_Sep_preactivation_up(filters * 4, filters * 2)
-        
+
         self.up4 = um.Res_preactivation_up(filters * 2, filters)
 
         self.outc = um.NewOutConv(filters, 1, sig)
