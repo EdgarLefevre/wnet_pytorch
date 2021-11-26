@@ -143,7 +143,8 @@ def reconstruction_loss(imgs, recons):
     return mse(recons, imgs) #+ bce(recons, imgs)
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
-    net = residual_wnet.Wnet_preact(filters=config.filters, drop_r=config.drop_r).cuda()
+    # net = wnet.WnetSep(filters=config.filters, drop_r=config.drop_r).cuda()
+    net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
     # recons_loss = nn.MSELoss()
