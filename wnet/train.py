@@ -25,7 +25,7 @@ widgets = [
     ") ",
 ]
 
-if os.uname()[1] == "iss":  # remove this when code will be distributed
+if os.uname()[1] == "iss":
     BASE_PATH = "/home/edgar/Documents/Datasets/JB/new_images/"
 else:
     BASE_PATH = "/home/elefevre/Datasets/JB/new_images/"
@@ -68,11 +68,10 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
             if step == "Train":
                 optim.zero_grad()
             recons, mask = net.forward(imgs)
-            # mask = net.forward_enc(imgs)
             loss_recons = recons_loss(recons, imgs)
             loss_enc = n_cut_loss(imgs, mask)
             if step == "Train":
-                loss = loss_enc + loss_recons  # same as retain graph
+                loss = loss_enc + loss_recons
                 loss.backward()
                 optim.step()
             _enc_loss.append(loss_enc.item())
@@ -143,8 +142,9 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 def reconstruction_loss(imgs, recons):
     mse = nn.MSELoss()
     # bce = nn.BCELoss()
-    ssim_loss = ssim.ssim
-    return ssim_loss(imgs, recons) + 0.5 * mse(recons, imgs) #+ bce(recons, imgs)
+    kld = nn.KLDivLoss(reduction="sum")
+    # ssim_loss = ssim.ssim
+    return mse(recons, imgs) + kld(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
@@ -152,7 +152,6 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
-    # recons_loss = nn.MSELoss()
     recons_loss = reconstruction_loss
     #  get dataset
     dataset_train, dataset_val = get_datasets(path_imgs, config)
@@ -185,9 +184,7 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
             ))
         scheduler.step()
-        # utils.visualize(net, imgs, epoch+1, config, path="data/results/")
     utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
-    # save_model(net, np.array(_enc_loss).mean())
 
 
 if __name__ == "__main__":

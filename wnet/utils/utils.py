@@ -200,7 +200,8 @@ def visualize(net, image, k, i, opt, path="data/results/"):
             (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
             (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
         )
-        print(output)
+        print("Mask : ", argmax)
+        print("Output : ", output)
         plot_images(image, pred, output, k, i, opt.size, path)
 
 
