@@ -8,6 +8,7 @@ import sklearn.model_selection as sk
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 
 from wnet.models import wnet, residual_wnet
 from wnet.utils import utils, data, soft_n_cut_loss, ssim
@@ -68,7 +69,7 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
             if step == "Train":
                 optim.zero_grad()
             recons, mask = net.forward(imgs)
-            loss_recons = recons_loss(recons, imgs)
+            loss_recons = recons_loss(imgs, recons)
             loss_enc = n_cut_loss(imgs, mask)
             if step == "Train":
                 loss = loss_enc + loss_recons
@@ -76,7 +77,7 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
                 optim.step()
             _enc_loss.append(loss_enc.item())
             _recons_loss.append(loss_recons.item())
-            if step == "Validation" and (epoch+1) == config.epochs:
+            if step == "Validation" and (epoch + 1) == config.epochs:
                 utils.visualize(net, imgs, epoch + 1, i, config, path="data/results/")
     return _enc_loss, _recons_loss
 
@@ -141,10 +142,9 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 
 def reconstruction_loss(imgs, recons):
     mse = nn.MSELoss()
-    # bce = nn.BCELoss()
-    kld = nn.KLDivLoss(reduction="sum")
+    bce = nn.BCEWithLogitsLoss()
     # ssim_loss = ssim.ssim
-    return mse(recons, imgs) + kld(recons, imgs)
+    return mse(recons, imgs) #+ bce(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
@@ -172,7 +172,7 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 dataset = dataset_train
             else:
                 dataset = dataset_val
-            _enc_loss, _recons_loss = _step(net, step, dataset, optimizer, n_cut_loss, recons_loss, epoch, config)
+            _enc_loss, _recons_loss = _step(net, step, dataset, optimizer, recons_loss, n_cut_loss, epoch, config)
             if step == "Train":
                 epoch_enc_train.append(np.array(_enc_loss).mean())
                 epoch_recons_train.append(np.array(_recons_loss).mean())

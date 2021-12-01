@@ -173,20 +173,17 @@ class NewOutConv(nn.Module):
     def __init__(self, in_channels, out_channels, sig=False):
         super(NewOutConv, self).__init__()
         self.conv = nn.Sequential(
-            DoubleConv(in_channels, in_channels),
-            nn.Conv2d(in_channels, out_channels, kernel_size=1)
+            DoubleConv(in_channels, out_channels),
+            nn.Conv2d(out_channels, out_channels, kernel_size=1)
         )
         if sig:
-            self.activ = nn.Sigmoid()
+            self.activ = nn.Softmax(dim=1)
         else:
             self.activ = nn.ReLU()
 
     def forward(self, x):
         x = self.conv(x)
         return self.activ(x)
-
-    def forward(self, x):
-        return self.conv(x)
 
 
 class GatingSignal(nn.Module):

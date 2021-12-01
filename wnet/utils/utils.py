@@ -191,18 +191,15 @@ def plot_images_att(imgs, pred, att, output, k, size, path):
 
 
 def visualize(net, image, k, i, opt, path="data/results/"):
-    if k % 2 == 0 or k == 1:
-        # mask = net.forward_enc(image)
-        output, mask = net.forward(image)
-        image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
-        argmax = mask > 0.5
-        pred, output = (
-            (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
-            (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
-        )
-        print("Mask : ", argmax)
-        print("Output : ", output)
-        plot_images(image, pred, output, k, i, opt.size, path)
+    # mask = net.forward_enc(image)
+    output, mask = net.forward(image)
+    image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
+    argmax = mask.argmax(dim=1) #mask > 0.5
+    pred, output = (
+        (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
+        (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
+    )
+    plot_images(image, pred, output, k, i, opt.size, path)
 
 
 def plot_images(imgs, pred,output, k, nb, size, path):
