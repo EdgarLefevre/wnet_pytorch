@@ -143,8 +143,8 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 def reconstruction_loss(imgs, recons):
     mse = nn.MSELoss()
     bce = nn.BCEWithLogitsLoss()
-    # ssim_loss = ssim.ssim
-    return mse(recons, imgs) #+ bce(recons, imgs)
+    ssim_loss = ssim.ssim
+    return 2 * mse(recons, imgs) + bce(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
