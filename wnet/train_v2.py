@@ -94,12 +94,12 @@ def reconstruction_loss(imgs, recons):
     mse = nn.MSELoss()
     # bce = nn.BCEWithLogitsLoss()
     ssim_loss = ssim.ssim
-    return 2 * mse(recons, imgs) + ssim_loss(recons, imgs)
+    return mse(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
-    # net = wnet.WnetSep(filters=config.filters, drop_r=config.drop_r).cuda()
-    net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
+    net = wnet.WnetSep(filters=config.filters, drop_r=config.drop_r).cuda()
+    # net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     n_cut_loss = soft_n_cut_loss.NCutLoss2D()
     recons_loss = reconstruction_loss

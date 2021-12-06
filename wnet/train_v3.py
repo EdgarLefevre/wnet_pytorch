@@ -56,7 +56,7 @@ def get_datasets(path_img, config):
     return dataset_train, dataset_val
 
 
-def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
+def _step(net, step, dataset, optim, glob_loss, epoch, config):
     _enc_loss, _recons_loss = [], []
     if step == "Train":
         net.train()
@@ -69,14 +69,13 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
             if step == "Train":
                 optim.zero_grad()
             recons, mask = net.forward(imgs)
-            loss_recons = recons_loss(imgs, recons)
-            loss_enc = n_cut_loss(imgs, mask)
+            loss = glob_loss(imgs, mask, recons)
             if step == "Train":
-                loss = loss_enc + loss_recons
+                # loss = loss_enc + loss_recons
                 loss.backward()
                 optim.step()
-            _enc_loss.append(loss_enc.item())
-            _recons_loss.append(loss_recons.item())
+            _enc_loss.append(loss.item())
+            _recons_loss.append(loss.item())
             if step == "Validation" and (epoch + 1) == config.epochs:
                 utils.visualize(net, imgs, epoch + 1, i, config, path="data/results/")
     return _enc_loss, _recons_loss
@@ -140,20 +139,20 @@ def _step(net, step, dataset, optim, recons_loss, n_cut_loss, epoch, config):
 #     utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
 #     # save_model(net, np.array(_enc_loss).mean())
 
-def reconstruction_loss(imgs, recons):
+def global_loss(imgs, masks, recons):
     mse = nn.MSELoss()
     # bce = nn.BCEWithLogitsLoss()
     # ssim_loss = ssim.ssim
     ncut = soft_n_cut_loss.NCutLoss2D()
-    return mse(recons, imgs)
+    return ncut(masks, imgs) + mse(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = wnet.WnetSep(filters=config.filters, drop_r=config.drop_r).cuda()
     # net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
-    n_cut_loss = soft_n_cut_loss.NCutLoss2D()
-    recons_loss = reconstruction_loss
+    # n_cut_loss = soft_n_cut_loss.NCutLoss2D()
+    glob_loss = global_loss
     #  get dataset
     dataset_train, dataset_val = get_datasets(path_imgs, config)
     epoch_enc_train = []
@@ -173,7 +172,7 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 dataset = dataset_train
             else:
                 dataset = dataset_val
-            _enc_loss, _recons_loss = _step(net, step, dataset, optimizer, recons_loss, n_cut_loss, epoch, config)
+            _enc_loss, _recons_loss = _step(net, step, dataset, optimizer, glob_loss, epoch, config)
             if step == "Train":
                 epoch_enc_train.append(np.array(_enc_loss).mean())
                 epoch_recons_train.append(np.array(_recons_loss).mean())

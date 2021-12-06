@@ -38,10 +38,10 @@ class Unet(nn.Module):
 
 
 class Unet_Sep(nn.Module):
-    def __init__(self, filters, drop_r=0.5, sig=False):
+    def __init__(self, filters, in_channels, out_channels, drop_r=0.5, sig=False):
         super(Unet_Sep, self).__init__()
 
-        self.down1 = um.Down_Block(1, filters)
+        self.down1 = um.Down_Block(in_channels, filters)
 
         self.down2 = um.Down_Sep_Block(filters, filters * 2, drop_r)
         self.down3 = um.Down_Sep_Block(filters * 2, filters * 4, drop_r)
@@ -55,7 +55,7 @@ class Unet_Sep(nn.Module):
 
         self.up4 = um.Up_Block(filters * 2, filters, drop_r, False)
 
-        self.outc = um.NewOutConv(filters, 1, sig)
+        self.outc = um.NewOutConv(filters, out_channels, sig)
 
     def forward(self, x):
         c1, x1 = self.down1(x)
@@ -89,8 +89,8 @@ class Wnet(nn.Module):
 class WnetSep(nn.Module):
     def __init__(self, filters, drop_r=0.3):
         super(WnetSep, self).__init__()
-        self.u_enc = nn.DataParallel(Unet_Sep(filters, drop_r, sig=True))
-        self.u_dec = nn.DataParallel(Unet_Sep(filters, drop_r))
+        self.u_enc = nn.DataParallel(Unet_Sep(filters, 1, 2, drop_r, sig=True))
+        self.u_dec = nn.DataParallel(Unet_Sep(filters, 2, 1, drop_r))
 
     def forward(self, x):
         mask = self.u_enc(x)
