@@ -10,11 +10,13 @@ class DoubleConv(nn.Module):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Dropout(0.2),  # can remove dp, not in the vanilla block
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Dropout(0.2), # can remove dp, not in the vanilla block
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(inplace=True),
         )
 
     def forward(self, x):
@@ -51,6 +53,26 @@ class DoubleSepConv(nn.Module):
         return self.double_conv(x)
 
 
+class DoubleSepConv_v2(nn.Module):
+    """(Separable convolution => [BN] => ReLU) * 2"""
+
+    def __init__(self, in_channels, out_channels):
+        super(DoubleSepConv_v2, self).__init__()
+        self.double_conv = nn.Sequential(
+            SeparableConv2d(in_channels, out_channels, kernel_size=3),
+            nn.Dropout(0.2),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(inplace=True),
+            SeparableConv2d(out_channels, out_channels, kernel_size=3),
+            nn.Dropout(0.2),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(inplace=True),
+        )
+
+    def forward(self, x):
+        return self.double_conv(x)
+
+
 class Down_Block(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -64,6 +86,19 @@ class Down_Block(nn.Module):
         return c, self.down(c)
 
 
+class Down_Block_v2(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
+    def __init__(self, in_channels, out_channels, drop=0.5):
+        super(Down_Block_v2, self).__init__()
+        self.conv = DoubleConv(in_channels, out_channels)
+        self.down = nn.Sequential(nn.MaxPool2d(2))
+
+    def forward(self, x):
+        c = self.conv(x)
+        return c, self.down(c)
+
+
 class Down_Sep_Block(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -71,6 +106,19 @@ class Down_Sep_Block(nn.Module):
         super(Down_Sep_Block, self).__init__()
         self.conv = DoubleSepConv(in_channels, out_channels)
         self.down = nn.Sequential(nn.MaxPool2d(2), nn.Dropout(drop))
+
+    def forward(self, x):
+        c = self.conv(x)
+        return c, self.down(c)
+
+
+class Down_Sep_Block_v2(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
+    def __init__(self, in_channels, out_channels, drop=0.5):
+        super(Down_Sep_Block_v2, self).__init__()
+        self.conv = DoubleSepConv_v2(in_channels, out_channels)
+        self.down = nn.Sequential(nn.MaxPool2d(2))
 
     def forward(self, x):
         c = self.conv(x)
@@ -99,6 +147,17 @@ class SepBridge(nn.Module):
         return self.conv(x)
 
 
+class SepBridge_v2(nn.Module):
+    def __init__(self, in_channels, out_channels, drop=0.2):
+        super(SepBridge_v2, self).__init__()
+        self.conv = nn.Sequential(
+            DoubleSepConv_v2(in_channels, out_channels), nn.Dropout(drop)
+        )
+
+    def forward(self, x):
+        return self.conv(x)
+
+
 class Up_Block(nn.Module):
     """Upscaling then double conv"""
 
@@ -109,6 +168,35 @@ class Up_Block(nn.Module):
         )
         self.conv = nn.Sequential(
             DoubleConv(in_channels, out_channels), nn.Dropout(p=drop)
+        )
+        self.attention = attention
+        if attention:
+            self.gating = GatingSignal(in_channels, out_channels)
+            self.att_gat = Attention_Gate(out_channels)
+
+    def forward(self, x, conc):
+        x1 = self.up(x)
+        if self.attention:
+            gat = self.gating(x)
+            map, att = self.att_gat(conc, gat)
+            x = torch.cat([x1, att], dim=1)
+            return map, self.conv(x)
+        else:
+            x = torch.cat([conc, x1], dim=1)
+            return self.conv(x)
+
+
+class Up_Block_v2(nn.Module):
+    """Upscaling then double conv"""
+
+    def __init__(self, in_channels, out_channels, drop=0.5, attention=False):
+        super(Up_Block_v2, self).__init__()
+        self.up = nn.ConvTranspose2d(
+            in_channels, out_channels, kernel_size=(2, 2), stride=(2, 2)
+        )
+        self.conv = nn.Sequential(
+            DoubleConv(in_channels, out_channels),
+            nn.Dropout(p=0.2)
         )
         self.attention = attention
         if attention:
@@ -155,6 +243,35 @@ class Up_Sep_Block(nn.Module):
             return self.conv(x)
 
 
+class Up_Sep_Block_v2(nn.Module):
+    """Upscaling then double conv"""
+
+    def __init__(self, in_channels, out_channels, drop=0.5, attention=False):
+        super(Up_Sep_Block_v2, self).__init__()
+        self.up = nn.ConvTranspose2d(
+            in_channels, out_channels, kernel_size=(2, 2), stride=(2, 2)
+        )
+        self.conv = nn.Sequential(
+            DoubleSepConv_v2(in_channels, out_channels),
+            nn.Dropout(p=drop)
+        )
+        self.attention = attention
+        if attention:
+            self.gating = GatingSignal(in_channels, out_channels)
+            self.att_gat = Attention_Gate(out_channels)
+
+    def forward(self, x, conc):
+        x1 = self.up(x)
+        if self.attention:
+            gat = self.gating(x)
+            map, att = self.att_gat(conc, gat)
+            x = torch.cat([x1, att], dim=1)
+            return map, self.conv(x)
+        else:
+            x = torch.cat([conc, x1], dim=1)
+            return self.conv(x)
+
+
 class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels, sig=False):
         super(OutConv, self).__init__()
@@ -179,7 +296,7 @@ class NewOutConv(nn.Module):
         if sig:
             self.activ = nn.Softmax(dim=1)
         else:
-            self.activ = nn.ReLU()
+            self.activ = nn.LeakyReLU()
 
     def forward(self, x):
         x = self.conv(x)
