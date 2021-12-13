@@ -12,3 +12,26 @@
 [![codecov](https://codecov.io/gh/EdgarLefevre/napari-deepmeta/branch/main/graph/badge.svg?token=H41ZaCAg31)](https://codecov.io/gh/EdgarLefevre/napari-deepmeta)
 -->
 
+## Installation 
+
+```bash
+conda env create -f environment.yml
+```
+
+## usage
+
+```bash
+python -m wnet.train # train_v3 is the best atm
+```
+
+## Folder explaination
+
+```bash
+.
+├── data  #output folder
+├── docs  #documentation folder (useless atm)
+├── test  #test folder (useless atm)
+└── wnet  #src folder
+    ├── models
+    └── utils 
+```

@@ -90,7 +90,7 @@ def global_loss(imgs, masks, recons):
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
-    net = wnet.WnetSep(filters=config.filters, drop_r=config.drop_r).cuda()
+    net = wnet.WnetSep_v2(filters=config.filters, drop_r=config.drop_r).cuda()
     # net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
     # n_cut_loss = soft_n_cut_loss.NCutLoss2D()
