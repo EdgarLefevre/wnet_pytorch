@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
 import argparse
+import os
 import random
 import re
 
@@ -136,7 +136,8 @@ def get_args():
     )
     parser.add_argument("--drop_r", "-d", type=float, default=0.2, help="Dropout rate")
     parser.add_argument(
-        "--filters", "-f",
+        "--filters",
+        "-f",
         type=int,
         default=8,
         help="Number of filters in first conv block",
@@ -150,11 +151,16 @@ def visualize_att(net, image, k, opt, path="data/results/"):
     if k % 2 == 0 or k == 1:
         mask, att = net.forward_enc(image)
         output = net.forward(image)
-        image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
+        image = (
+            (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
+        )
         argmax = torch.argmax(mask, 1)
         pred, output = (
             (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
-            (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
+            (output.detach().cpu() * 255)
+            .numpy()
+            .astype(np.uint8)
+            .reshape(-1, opt.size, opt.size),
         )
         plot_images_att(image, pred, att.detach().cpu(), output, k, opt.size, path)
 
@@ -186,7 +192,7 @@ def plot_images_att(imgs, pred, att, output, k, size, path):
         i += 4
         if i >= 15:
             break
-    plt.savefig(path+"epoch_" + str(k) + ".png")
+    plt.savefig(path + "epoch_" + str(k) + ".png")
     plt.close()
 
 
@@ -194,15 +200,18 @@ def visualize(net, image, k, i, opt, path="data/results/"):
     # mask = net.forward_enc(image)
     output, mask = net.forward(image)
     image = (image.cpu().numpy() * 255).astype(np.uint8).reshape(-1, opt.size, opt.size)
-    argmax = mask.argmax(dim=1) #mask > 0.5
+    argmax = mask.argmax(dim=1)  # mask > 0.5
     pred, output = (
         (argmax.detach().cpu() * 255).numpy().astype(np.uint8),
-        (output.detach().cpu() * 255).numpy().astype(np.uint8).reshape(-1, opt.size, opt.size),
+        (output.detach().cpu() * 255)
+        .numpy()
+        .astype(np.uint8)
+        .reshape(-1, opt.size, opt.size),
     )
     plot_images(image, pred, output, k, i, opt.size, path)
 
 
-def plot_images(imgs, pred,output, k, nb, size, path):
+def plot_images(imgs, pred, output, k, nb, size, path):
     fig = plt.figure(figsize=(15, 10))
     columns = 3
     rows = 5  # nb images
@@ -224,5 +233,5 @@ def plot_images(imgs, pred,output, k, nb, size, path):
         i += 3
         if i >= 15:
             break
-    plt.savefig(path+"epoch_" + str(k) + "_{}_.png".format(nb))
+    plt.savefig(path + "epoch_" + str(k) + "_{}_.png".format(nb))
     plt.close()

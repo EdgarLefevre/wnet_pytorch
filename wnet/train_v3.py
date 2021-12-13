@@ -7,11 +7,11 @@ import skimage.io as io
 import sklearn.model_selection as sk
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
+import torch.optim as optim
 
-from wnet.models import wnet, residual_wnet
-from wnet.utils import utils, data, soft_n_cut_loss, ssim
+from wnet.models import residual_wnet, wnet
+from wnet.utils import data, soft_n_cut_loss, ssim, utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
@@ -49,9 +49,7 @@ def get_datasets(path_img, config):
     img_train, img_val = sk.train_test_split(
         img_path_list, test_size=0.2, random_state=42
     )
-    dataset_train = data.Unsupervised_dataset(
-        config.batch_size, config.size, img_train
-    )
+    dataset_train = data.Unsupervised_dataset(config.batch_size, config.size, img_train)
     dataset_val = data.Unsupervised_dataset(config.batch_size, config.size, img_val)
     return dataset_train, dataset_val
 
@@ -114,7 +112,9 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 dataset = dataset_train
             else:
                 dataset = dataset_val
-            _enc_loss, _recons_loss = _step(net, step, dataset, optimizer, glob_loss, epoch, config)
+            _enc_loss, _recons_loss = _step(
+                net, step, dataset, optimizer, glob_loss, epoch, config
+            )
             if step == "Train":
                 epoch_enc_train.append(np.array(_enc_loss).mean())
                 epoch_recons_train.append(np.array(_recons_loss).mean())
@@ -122,11 +122,15 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 epoch_enc_val.append(np.array(_enc_loss).mean())
                 epoch_recons_val.append(np.array(_recons_loss).mean())
 
-            utils.print_gre("{}: \nEncoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
-                step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
-            ))
+            utils.print_gre(
+                "{}: \nEncoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
+                    step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
+                )
+            )
         scheduler.step()
-    utils.learning_curves(epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val)
+    utils.learning_curves(
+        epoch_enc_train, epoch_recons_train, epoch_enc_val, epoch_recons_val
+    )
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import torch.nn as nn
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
+
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
@@ -14,7 +15,7 @@ class DoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.Dropout(0.2), # can remove dp, not in the vanilla block
+            nn.Dropout(0.2),  # can remove dp, not in the vanilla block
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
         )
@@ -26,8 +27,14 @@ class DoubleConv(nn.Module):
 class SeparableConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, bias=False):
         super(SeparableConv2d, self).__init__()
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size,
-                                   groups=in_channels, bias=bias, padding=1)
+        self.depthwise = nn.Conv2d(
+            in_channels,
+            in_channels,
+            kernel_size=kernel_size,
+            groups=in_channels,
+            bias=bias,
+            padding=1,
+        )
         self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=bias)
 
     def forward(self, x):
@@ -38,6 +45,7 @@ class SeparableConv2d(nn.Module):
 
 class DoubleSepConv(nn.Module):
     """(Separable convolution => [BN] => ReLU) * 2"""
+
     def __init__(self, in_channels, out_channels):
         super(DoubleSepConv, self).__init__()
         self.double_conv = nn.Sequential(
@@ -195,8 +203,7 @@ class Up_Block_v2(nn.Module):
             in_channels, out_channels, kernel_size=(2, 2), stride=(2, 2)
         )
         self.conv = nn.Sequential(
-            DoubleConv(in_channels, out_channels),
-            nn.Dropout(p=0.2)
+            DoubleConv(in_channels, out_channels), nn.Dropout(p=0.2)
         )
         self.attention = attention
         if attention:
@@ -252,8 +259,7 @@ class Up_Sep_Block_v2(nn.Module):
             in_channels, out_channels, kernel_size=(2, 2), stride=(2, 2)
         )
         self.conv = nn.Sequential(
-            DoubleSepConv_v2(in_channels, out_channels),
-            nn.Dropout(p=drop)
+            DoubleSepConv_v2(in_channels, out_channels), nn.Dropout(p=drop)
         )
         self.attention = attention
         if attention:
@@ -291,7 +297,7 @@ class NewOutConv(nn.Module):
         super(NewOutConv, self).__init__()
         self.conv = nn.Sequential(
             DoubleConv(in_channels, out_channels),
-            nn.Conv2d(out_channels, out_channels, kernel_size=1)
+            nn.Conv2d(out_channels, out_channels, kernel_size=1),
         )
         if sig:
             self.activ = nn.Softmax(dim=1)
@@ -345,19 +351,17 @@ class Res_Block_down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Res_Block_down, self).__init__()
         self.conv_relu1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.conv_block = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
             nn.Dropout(0.4),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.conv_relu2 = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
 
@@ -375,19 +379,17 @@ class Res_Block_up(nn.Module):
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
 
         self.conv_relu1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.conv_block = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
             nn.Dropout(0.4),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.conv_relu2 = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
 
     def forward(self, x, conc):
@@ -404,19 +406,17 @@ class Res_conv_Block_down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Res_conv_Block_down, self).__init__()
         self.conv_relu1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.conv_block = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
             # nn.Dropout(0.4),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.conv_relu2 = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
         self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
@@ -436,19 +436,17 @@ class Res_conv_Block_up(nn.Module):
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
 
         self.conv_relu1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.conv_block = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
             # nn.Dropout(0.4),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.conv_relu2 = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
@@ -467,8 +465,7 @@ class Res_preactivation_down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Res_preactivation_down, self).__init__()
         self.conv_relu1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.conv_block = nn.Sequential(
             nn.BatchNorm2d(out_channels),
@@ -476,11 +473,10 @@ class Res_preactivation_down(nn.Module):
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.conv_relu2 = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
         self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
@@ -508,8 +504,7 @@ class Res_preactivation_up(nn.Module):
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.conv_relu2 = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), nn.ReLU()
         )
         self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
@@ -527,8 +522,7 @@ class Res_Sep_preactivation_down(nn.Module):
     def __init__(self, in_channels, out_channels, drop=0.3):
         super(Res_Sep_preactivation_down, self).__init__()
         self.conv_relu1 = nn.Sequential(
-            SeparableConv2d(in_channels, out_channels, kernel_size=3),
-            nn.ReLU()
+            SeparableConv2d(in_channels, out_channels, kernel_size=3), nn.ReLU()
         )
         self.conv_block = nn.Sequential(
             nn.BatchNorm2d(out_channels),
@@ -536,11 +530,10 @@ class Res_Sep_preactivation_down(nn.Module):
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
-            SeparableConv2d(out_channels, out_channels, kernel_size=3)
+            SeparableConv2d(out_channels, out_channels, kernel_size=3),
         )
         self.conv_relu2 = nn.Sequential(
-            SeparableConv2d(out_channels, out_channels, kernel_size=3),
-            nn.ReLU()
+            SeparableConv2d(out_channels, out_channels, kernel_size=3), nn.ReLU()
         )
         self.dp = nn.Dropout(p=drop)
         self.down = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=2)
@@ -570,8 +563,7 @@ class Res_Sep_preactivation_up(nn.Module):
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
         )
         self.conv_relu2 = nn.Sequential(
-            SeparableConv2d(out_channels, out_channels, kernel_size=3),
-            nn.ReLU()
+            SeparableConv2d(out_channels, out_channels, kernel_size=3), nn.ReLU()
         )
         self.dp = nn.Dropout(p=drop)
         self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1)

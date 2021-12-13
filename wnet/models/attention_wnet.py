@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import wnet.models.utils_model as um
 import torch.nn as nn
+
+import wnet.models.utils_model as um
 
 
 class Unet_attention(nn.Module):

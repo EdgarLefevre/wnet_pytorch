@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import wnet.models.utils_model as um
 import torch.nn as nn
+
+import wnet.models.utils_model as um
 
 
 class Unet(nn.Module):
@@ -134,7 +135,6 @@ class Wnet_Seppreact(nn.Module):
         self.u_enc = nn.DataParallel(Unet_Seppreact(1, 2, filters, drop_r, sig=True))
         self.u_dec = nn.DataParallel(Unet_Seppreact(2, 1, filters, drop_r))
         # self.softmax = nn.Sequential(nn.Conv2d(1, 1, kernel_size=1, padding='same'), nn.Softmax(dim=1))
-
 
     def forward(self, x):
         mask = self.u_enc(x)

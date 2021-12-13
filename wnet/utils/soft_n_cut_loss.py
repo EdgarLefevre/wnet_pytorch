@@ -7,7 +7,6 @@ import torch.nn.functional as F
 from scipy.stats import norm
 from torch import Tensor
 
-
 # The weight matrix w is a measure of the weight between each pixel and
 # every other pixel. so w[u][v] is a measure of
 #   (a) Distance between the brightness of the two pixels.

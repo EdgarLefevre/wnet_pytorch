@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import cv2
 import numpy as np
 import skimage.exposure as exposure
 import skimage.io as io
 import torch
 from torch.utils.data import Dataset
-import cv2
 
 
 def contrast_and_reshape(img):
@@ -27,9 +27,7 @@ def contrast_and_reshape(img):
 
 
 class Unsupervised_dataset(Dataset):
-    def __init__(
-        self, batch_size, img_size, input_img_paths, contrast=True
-    ):
+    def __init__(self, batch_size, img_size, input_img_paths, contrast=True):
         self.batch_size = batch_size
         self.img_size = img_size
         self.input_img_paths = input_img_paths
@@ -53,6 +51,10 @@ class Unsupervised_dataset(Dataset):
             if self.contrast:
                 img = contrast_and_reshape(img)
             if np.shape(img)[0] != self.img_size:
-                img = cv2.resize(img, dsize=(self.img_size, self.img_size), interpolation=cv2.INTER_CUBIC)
+                img = cv2.resize(
+                    img,
+                    dsize=(self.img_size, self.img_size),
+                    interpolation=cv2.INTER_CUBIC,
+                )
             x[j] = np.expand_dims(img, 0)
         return torch.Tensor(x)
