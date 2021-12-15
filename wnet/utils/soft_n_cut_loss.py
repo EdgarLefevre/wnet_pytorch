@@ -25,7 +25,7 @@ def soft_n_cut_loss(inputs, segmentations):
         flatten_image = flatten_image.reshape(flatten_image.shape[0] ** 2)
         loss += soft_n_cut_loss_(flatten_image, segmentations[i], 2, 512,
                                  512)  # last 3 = k, size, size -> take from args
-    loss = loss / inputs.shape[0]
+    loss /= inputs.shape[0]
     return loss
 
 
@@ -96,11 +96,9 @@ def edge_weights(flatten_image, rows, cols, std_intensity=3, std_position=1, rad
     # Might have to consider casting as float32 instead of creating meshgrid as float32
 
     dist_weight = torch.exp(-torch.div(sq_distance_matrix, std_position ** 2))
-    weight = torch.mul(intensity_weight, dist_weight)  # Element wise product
-
     # ele_diff = tf.reshape(ele_diff, (rows, cols))
     # w = ele_diff + distance_matrix
-    return weight
+    return torch.mul(intensity_weight, dist_weight)
 
 
 def outer_product(v1, v2):

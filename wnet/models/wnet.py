@@ -34,8 +34,7 @@ class Unet(nn.Module):
         x = self.up2(x, c3)
         x = self.up3(x, c2)
         x = self.up4(x, c1)
-        mask = self.outc(x)
-        return mask
+        return self.outc(x)
 
 
 class Unet_Sep(nn.Module):
@@ -68,8 +67,7 @@ class Unet_Sep(nn.Module):
         x = self.up2(x, c3)
         x = self.up3(x, c2)
         x = self.up4(x, c1)
-        mask = self.outc(x)
-        return mask
+        return self.outc(x)
 
 
 class Unet_Sep_v2(nn.Module):
@@ -102,8 +100,7 @@ class Unet_Sep_v2(nn.Module):
         x = self.up2(x, c3)
         x = self.up3(x, c2)
         x = self.up4(x, c1)
-        mask = self.outc(x)
-        return mask
+        return self.outc(x)
 
 
 class Wnet(nn.Module):
@@ -118,7 +115,7 @@ class Wnet(nn.Module):
     def forward(self, x):
         mask = self.u_enc(x)
         reconstruction = self.u_dec(mask)
-        return reconstruction
+        return reconstruction, mask
 
 
 class WnetSep(nn.Module):

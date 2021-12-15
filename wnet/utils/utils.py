@@ -98,9 +98,7 @@ def sorted_alphanumeric(data):
 
 def learning_curves(train_enc, train_recons, val_enc, val_recons, path="data/plot.png"):
     fig = plt.figure(figsize=(15, 10))
-    ax = []
-    ax.append(fig.add_subplot(1, 2, 1))
-    ax.append(fig.add_subplot(1, 2, 2))
+    ax = [fig.add_subplot(1, 2, 1), fig.add_subplot(1, 2, 2)]
     fig.suptitle("Training Curves")
     ax[0].plot(train_enc, label="Train Enc")
     ax[0].plot(val_enc, label="Validation Enc")

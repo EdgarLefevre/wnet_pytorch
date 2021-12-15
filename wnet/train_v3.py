@@ -82,9 +82,9 @@ def _step(net, step, dataset, optim, glob_loss, epoch, config):
 def global_loss(imgs, masks, recons):
     mse = nn.MSELoss()
     # bce = nn.BCEWithLogitsLoss()
-    # ssim_loss = ssim.ssim
+    ssim_loss = ssim.ssim
     ncut = soft_n_cut_loss.NCutLoss2D()
-    return ncut(masks, imgs) + mse(recons, imgs)
+    return 2 * ncut(imgs, masks) + mse(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
@@ -108,10 +108,7 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
         _recons_loss = []
         utils.print_gre("Epoch {}/{}".format(epoch + 1, epochs))
         for step in ["Train", "Validation"]:
-            if step == "Train":
-                dataset = dataset_train
-            else:
-                dataset = dataset_val
+            dataset = dataset_train if step == "Train" else dataset_val
             _enc_loss, _recons_loss = _step(
                 net, step, dataset, optimizer, glob_loss, epoch, config
             )

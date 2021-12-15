@@ -12,11 +12,11 @@ class DoubleConv(nn.Module):
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.Dropout(0.2),  # can remove dp, not in the vanilla block
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.Dropout(0.2),  # can remove dp, not in the vanilla block
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
         )
 
@@ -50,10 +50,10 @@ class DoubleSepConv(nn.Module):
         super(DoubleSepConv, self).__init__()
         self.double_conv = nn.Sequential(
             SeparableConv2d(in_channels, out_channels, kernel_size=3),
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
         )
 
@@ -69,11 +69,11 @@ class DoubleSepConv_v2(nn.Module):
         self.double_conv = nn.Sequential(
             SeparableConv2d(in_channels, out_channels, kernel_size=3),
             nn.Dropout(0.2),
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
             nn.Dropout(0.2),
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
         )
 
@@ -282,10 +282,7 @@ class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels, sig=False):
         super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        if sig:
-            self.activ = nn.Sigmoid()
-        else:
-            self.activ = nn.ReLU()
+        self.activ = nn.Sigmoid() if sig else nn.ReLU()
 
     def forward(self, x):
         x = self.conv(x)
@@ -299,10 +296,7 @@ class NewOutConv(nn.Module):
             DoubleConv(in_channels, out_channels),
             nn.Conv2d(out_channels, out_channels, kernel_size=1),
         )
-        if sig:
-            self.activ = nn.Softmax(dim=1)
-        else:
-            self.activ = nn.LeakyReLU()
+        self.activ = nn.Softmax(dim=1) if sig else nn.LeakyReLU()
 
     def forward(self, x):
         x = self.conv(x)
