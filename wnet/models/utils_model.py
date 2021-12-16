@@ -7,17 +7,17 @@ import torch.nn as nn
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, drop_r):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.Dropout(0.2),  # can remove dp, not in the vanilla block
-            # nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True),
+            nn.Dropout(drop_r),  # can remove dp, not in the vanilla block
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(out_channels),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.Dropout(0.2),  # can remove dp, not in the vanilla block
-            # nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True),
+            nn.Dropout(drop_r),  # can remove dp, not in the vanilla block
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(out_channels),
         )
 
     def forward(self, x):
@@ -50,11 +50,11 @@ class DoubleSepConv(nn.Module):
         super(DoubleSepConv, self).__init__()
         self.double_conv = nn.Sequential(
             SeparableConv2d(in_channels, out_channels, kernel_size=3),
-            # nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
+            nn.BatchNorm2d(out_channels),
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
-            # nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
+            nn.BatchNorm2d(out_channels),
         )
 
     def forward(self, x):
@@ -64,17 +64,17 @@ class DoubleSepConv(nn.Module):
 class DoubleSepConv_v2(nn.Module):
     """(Separable convolution => [BN] => ReLU) * 2"""
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, drop_r):
         super(DoubleSepConv_v2, self).__init__()
         self.double_conv = nn.Sequential(
             SeparableConv2d(in_channels, out_channels, kernel_size=3),
-            nn.Dropout(0.2),
-            # nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True),
+            nn.Dropout(drop_r),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(out_channels),
             SeparableConv2d(out_channels, out_channels, kernel_size=3),
-            nn.Dropout(0.2),
-            # nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True),
+            nn.Dropout(drop_r),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(out_channels)
         )
 
     def forward(self, x):
@@ -99,7 +99,7 @@ class Down_Block_v2(nn.Module):
 
     def __init__(self, in_channels, out_channels, drop=0.5):
         super(Down_Block_v2, self).__init__()
-        self.conv = DoubleConv(in_channels, out_channels)
+        self.conv = DoubleConv(in_channels, out_channels, drop)
         self.down = nn.Sequential(nn.MaxPool2d(2))
 
     def forward(self, x):
@@ -125,7 +125,7 @@ class Down_Sep_Block_v2(nn.Module):
 
     def __init__(self, in_channels, out_channels, drop=0.5):
         super(Down_Sep_Block_v2, self).__init__()
-        self.conv = DoubleSepConv_v2(in_channels, out_channels)
+        self.conv = DoubleSepConv_v2(in_channels, out_channels, drop)
         self.down = nn.Sequential(nn.MaxPool2d(2))
 
     def forward(self, x):
@@ -159,7 +159,7 @@ class SepBridge_v2(nn.Module):
     def __init__(self, in_channels, out_channels, drop=0.2):
         super(SepBridge_v2, self).__init__()
         self.conv = nn.Sequential(
-            DoubleSepConv_v2(in_channels, out_channels), nn.Dropout(drop)
+            DoubleSepConv_v2(in_channels, out_channels, drop)
         )
 
     def forward(self, x):
@@ -203,23 +203,23 @@ class Up_Block_v2(nn.Module):
             in_channels, out_channels, kernel_size=(2, 2), stride=(2, 2)
         )
         self.conv = nn.Sequential(
-            DoubleConv(in_channels, out_channels), nn.Dropout(p=0.2)
+            DoubleConv(in_channels, out_channels, drop)
         )
-        self.attention = attention
-        if attention:
-            self.gating = GatingSignal(in_channels, out_channels)
-            self.att_gat = Attention_Gate(out_channels)
+        # self.attention = attention
+        # if attention:
+        #     self.gating = GatingSignal(in_channels, out_channels)
+        #     self.att_gat = Attention_Gate(out_channels)
 
     def forward(self, x, conc):
         x1 = self.up(x)
-        if self.attention:
-            gat = self.gating(x)
-            map, att = self.att_gat(conc, gat)
-            x = torch.cat([x1, att], dim=1)
-            return map, self.conv(x)
-        else:
-            x = torch.cat([conc, x1], dim=1)
-            return self.conv(x)
+        # if self.attention:
+        #     gat = self.gating(x)
+        #     map, att = self.att_gat(conc, gat)
+        #     x = torch.cat([x1, att], dim=1)
+        #     return map, self.conv(x)
+        # else:
+        x = torch.cat([conc, x1], dim=1)
+        return self.conv(x)
 
 
 class Up_Sep_Block(nn.Module):
@@ -259,23 +259,23 @@ class Up_Sep_Block_v2(nn.Module):
             in_channels, out_channels, kernel_size=(2, 2), stride=(2, 2)
         )
         self.conv = nn.Sequential(
-            DoubleSepConv_v2(in_channels, out_channels), nn.Dropout(p=drop)
+            DoubleSepConv_v2(in_channels, out_channels, drop)
         )
-        self.attention = attention
-        if attention:
-            self.gating = GatingSignal(in_channels, out_channels)
-            self.att_gat = Attention_Gate(out_channels)
+        # self.attention = attention
+        # if attention:
+        #     self.gating = GatingSignal(in_channels, out_channels)
+        #     self.att_gat = Attention_Gate(out_channels)
 
     def forward(self, x, conc):
         x1 = self.up(x)
-        if self.attention:
-            gat = self.gating(x)
-            map, att = self.att_gat(conc, gat)
-            x = torch.cat([x1, att], dim=1)
-            return map, self.conv(x)
-        else:
-            x = torch.cat([conc, x1], dim=1)
-            return self.conv(x)
+        # if self.attention:
+        #     gat = self.gating(x)
+        #     map, att = self.att_gat(conc, gat)
+        #     x = torch.cat([x1, att], dim=1)
+        #     return map, self.conv(x)
+        # else:
+        x = torch.cat([conc, x1], dim=1)
+        return self.conv(x)
 
 
 class OutConv(nn.Module):
@@ -290,10 +290,10 @@ class OutConv(nn.Module):
 
 
 class NewOutConv(nn.Module):
-    def __init__(self, in_channels, out_channels, sig=False):
+    def __init__(self, in_channels, out_channels, drop_r, sig=False):
         super(NewOutConv, self).__init__()
         self.conv = nn.Sequential(
-            DoubleConv(in_channels, out_channels),
+            DoubleConv(in_channels, out_channels, drop_r),
             nn.Conv2d(out_channels, out_channels, kernel_size=1),
         )
         self.activ = nn.Softmax(dim=1) if sig else nn.LeakyReLU()

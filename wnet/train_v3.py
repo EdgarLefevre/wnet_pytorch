@@ -84,14 +84,13 @@ def global_loss(imgs, masks, recons):
     # bce = nn.BCEWithLogitsLoss()
     ssim_loss = ssim.ssim
     ncut = soft_n_cut_loss.NCutLoss2D()
-    return 2 * ncut(imgs, masks) + mse(recons, imgs)
+    return ncut(imgs, masks) + mse(recons, imgs)
 
 
 def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
     net = wnet.WnetSep_v2(filters=config.filters, drop_r=config.drop_r).cuda()
     # net = residual_wnet.Wnet_Seppreact(filters=config.filters, drop_r=config.drop_r).cuda()
     optimizer = optim.Adam(net.parameters(), lr=config.lr)
-    # n_cut_loss = soft_n_cut_loss.NCutLoss2D()
     glob_loss = global_loss
     #  get dataset
     dataset_train, dataset_val = get_datasets(path_imgs, config)
@@ -108,6 +107,7 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
         _recons_loss = []
         utils.print_gre("Epoch {}/{}".format(epoch + 1, epochs))
         for step in ["Train", "Validation"]:
+            utils.print_gre(step+":")
             dataset = dataset_train if step == "Train" else dataset_val
             _enc_loss, _recons_loss = _step(
                 net, step, dataset, optimizer, glob_loss, epoch, config
@@ -120,8 +120,8 @@ def train(path_imgs, config, epochs=5):  # todo: refactor this ugly code
                 epoch_recons_val.append(np.array(_recons_loss).mean())
 
             utils.print_gre(
-                "{}: \nEncoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
-                    step, np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
+                "Encoding loss: {:.3f}\t Reconstruction loss: {:.3f}".format(
+                    np.array(_enc_loss).mean(), np.array(_recons_loss).mean()
                 )
             )
         scheduler.step()

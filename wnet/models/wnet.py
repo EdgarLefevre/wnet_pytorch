@@ -71,10 +71,10 @@ class Unet_Sep(nn.Module):
 
 
 class Unet_Sep_v2(nn.Module):
-    def __init__(self, filters, in_channels, out_channels, drop_r=0.5, sig=False):
+    def __init__(self, filters, in_channels, out_channels, drop_r=0.2, sig=False):
         super(Unet_Sep_v2, self).__init__()
 
-        self.down1 = um.Down_Block_v2(in_channels, filters)
+        self.down1 = um.Down_Block_v2(in_channels, filters, drop_r)
 
         self.down2 = um.Down_Sep_Block_v2(filters, filters * 2, drop_r)
         self.down3 = um.Down_Sep_Block_v2(filters * 2, filters * 4, drop_r)
@@ -82,13 +82,13 @@ class Unet_Sep_v2(nn.Module):
 
         self.bridge = um.SepBridge_v2(filters * 8, filters * 16, drop_r)
 
-        self.up1 = um.Up_Sep_Block_v2(filters * 16, filters * 8, drop_r, False)
-        self.up2 = um.Up_Sep_Block_v2(filters * 8, filters * 4, drop_r, False)
-        self.up3 = um.Up_Sep_Block_v2(filters * 4, filters * 2, drop_r, False)
+        self.up1 = um.Up_Sep_Block_v2(filters * 16, filters * 8, drop_r)
+        self.up2 = um.Up_Sep_Block_v2(filters * 8, filters * 4, drop_r)
+        self.up3 = um.Up_Sep_Block_v2(filters * 4, filters * 2, drop_r)
 
-        self.up4 = um.Up_Block_v2(filters * 2, filters, drop_r, False)
+        self.up4 = um.Up_Block_v2(filters * 2, filters, drop_r)
 
-        self.outc = um.NewOutConv(filters, out_channels, sig)
+        self.outc = um.NewOutConv(filters, out_channels, drop_r, sig)
 
     def forward(self, x):
         c1, x1 = self.down1(x)
